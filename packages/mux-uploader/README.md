@@ -75,6 +75,33 @@ This will show:
 
 ![mux uploader with defaults](./screenshots/default-everything.gif)
 
+## Fetching the upload URL async
+
+In the examples above, the `endpoint` attribute is an authenticated URL for a Mux [Direct Upload](https://docs.mux.com/api-reference/video#operation/create-direct-upload).
+
+At the time you render the `<mux-uploader>`, you may not have the direct upload URL yet, so it helps to fetch that async from your server after a user selects a file.
+
+```html
+<mux-uploader status></mux-uploader>
+
+<script>
+  const muxUploader = document.querySelector('mux-uploader');
+  /*
+    Endpoint should be a function that returns a promise and resolves
+    with a string for the upload URL.
+  */
+  muxUploader.endpoint = function () {
+    /*
+      In this example, the server endpoint will return the upload URL
+      in the response body "https://storage.googleapis.com/video..."
+    */
+    return fetch('/your-server/api/create-upload').then((resp) => {
+      return resp.text();
+    });
+  };
+</script>
+```
+
 ## Customizing
 
 The default uploader looks nice out of the box, but it probably isn't exactly the look you're going for in your application.
@@ -145,33 +172,6 @@ By default the status text shows a percentage. If you want to center the status 
 ```
 
 ![mux uploader with custom status text](./screenshots/custom-status-text.gif)
-
-## Fetching the upload URL async
-
-In the examples above, the `endpoint` attribute is an authenticated URL for a Mux [Direct Upload](https://docs.mux.com/api-reference/video#operation/create-direct-upload).
-
-At the time you render the `<mux-uploader>`, you may not have the direct upload URL yet, so it helps to fetch that async from your server after a user selects a file.
-
-```html
-<mux-uploader status></mux-uploader>
-
-<script>
-  const muxUploader = document.querySelector('mux-uploader');
-  /*
-    Endpoint should be a function that returns a promise and resolves
-    with a string for the upload URL.
-  */
-  muxUploader.endpoint = function () {
-    /*
-      In this example, the server endpoint will return the upload URL
-      in the response body "https://storage.googleapis.com/video..."
-    */
-    return fetch('/your-server/api/create-upload').then((resp) => {
-      return resp.text();
-    });
-  };
-</script>
-```
 
 ## Drag and Drop
 
