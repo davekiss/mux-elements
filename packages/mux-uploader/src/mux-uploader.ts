@@ -1,5 +1,7 @@
 import { globalThis, document } from 'shared-polyfills';
 import * as UpChunk from '@mux/upchunk';
+import MuxUploaderQueue from './utils/queue';
+import type { MuxUploaderQueueItemOptions } from './utils/queue';
 
 const styles = `
 :host {
@@ -101,9 +103,15 @@ interface MuxUploaderElement extends HTMLElement {
 
 class MuxUploaderElement extends globalThis.HTMLElement implements MuxUploaderElement {
   protected _endpoint: Endpoint;
+  #controller: AbortController | undefined;
+
+  #queue?: MuxUploaderQueue;
 
   constructor() {
     super();
+
+    // todo: pass opts to queue based on element attrs
+    this.#queue = new MuxUploaderQueue();
 
     const shadow = this.attachShadow({ mode: 'open' });
     const uploaderHtml = template.content.cloneNode(true);
@@ -125,15 +133,16 @@ class MuxUploaderElement extends globalThis.HTMLElement implements MuxUploaderEl
   }
 
   connectedCallback() {
+    this.#controller = new AbortController();
+    const opts = { signal: this.#controller.signal };
+
     //@ts-ignore
-    this.addEventListener('file-ready', this.handleUpload);
-    this.addEventListener('reset', this.resetState);
+    this.addEventListener('file-ready', this.handleUpload, opts);
+    this.addEventListener('reset', this.resetState, opts);
   }
 
   disconnectedCallback() {
-    //@ts-ignore
-    this.removeEventListener('file-ready', this.handleUpload, false);
-    this.removeEventListener('reset', this.resetState);
+    this.#controller?.abort();
   }
 
   protected get hiddenFileInput() {
@@ -173,6 +182,21 @@ class MuxUploaderElement extends globalThis.HTMLElement implements MuxUploaderEl
     // Reset file to ensure change/input events will fire, even if selecting the same file (CJP).
     this.hiddenFileInput.value = '';
   }
+
+  queueUpload = (file: File, options?: MuxUploaderQueueItemOptions) => {
+    this.#queue?.addItem(file, options);
+  };
+
+  addItemElement = (evt) => {
+    const el = document.createElement('mux-uploader-item');
+    el.setAttribute('id', evt.detail.id);
+    this.shadowRoot?.appendChild(el);
+  };
+
+  removeItemElement = (id: string) => {
+    const item = document.getElementById(id);
+    item?.remove();
+  };
 
   handleUpload(evt: CustomEvent) {
     const endpoint = this.endpoint;
