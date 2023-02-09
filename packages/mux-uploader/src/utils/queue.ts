@@ -59,11 +59,6 @@ export default class MuxUploaderQueue {
     this.#testUpload = opts?.test ?? false;
     this.#dynamicChunkSize = opts?.dynamicChunkSize ?? false;
 
-    const target = {
-      message1: 'hello',
-      message2: 'everyone',
-    };
-
     const intercept = {
       set(queue: MuxUploaderQueueItems, id: string, value: MuxUploaderQueueItem) {
         console.log(id);
